@@ -1,7 +1,5 @@
 <template>
 	<div class="record-form">
-		{{props}}
-		{{values}}
 		<div class="record-form__inner">
 			<div class="record-form__body">
 				<div class="record-form__id">
