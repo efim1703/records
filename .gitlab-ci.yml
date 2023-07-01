@@ -1,0 +1,171 @@
+image: node:20.2.0
+
+stages:
+  - build
+  - deploy
+
+cache:
+  paths:
+    - node_modules/
+
+build-job:
+  stage: build
+  script:
+    - npm install --progress=false
+    - npm run build
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - dist
+
+build-story:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "develop"
+  script:
+    - npm install --progress=false
+    - npm run build-storybook
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - storybook-static
+
+deploy-master-job:
+  stage: deploy
+  variables:
+    CONNECTION: "${SSH_PRODUCTION_USER}@${SSH_PRODUCTION_HOST}"
+    DEPLOY_PATH: "${PRODUCTION_WORK_DIR}"
+    SSH_HOST: "${SSH_PRODUCTION_HOST}"
+    SSH_PRIVATE_KEY: "${SSH_PRODUCTION_PRIVATE_KEY}"
+    MANUAL: "false"
+  rules:
+    - if: $MANUAL == "false" && $CI_COMMIT_REF_NAME == "master"
+  before_script:
+    - echo "====== UPDATE & INSTALL PACKAGES ======"
+    - apt-get -yq update && apt-get -yq upgrade
+    - apt-get -yqq install ssh curl rsync
+
+    - echo "${CONNECTION}"
+    - echo "${DEPLOY_PATH}"
+    - echo "${MANUAL}"
+
+    - echo "====== SET SSH KEY ======"
+    - eval "$(ssh-agent -s)"
+    - ssh-add <(echo "${SSH_PRIVATE_KEY}")
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
+    - chmod 664 ~/.ssh/known_hosts
+
+    - echo "====== TEST SSH CONNECTION ======"
+    - ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T "${CONNECTION}"
+  script:
+    - echo "====== SYNC LOCAL AND REMOTE DIRECTORY ======"
+    - rsync -ahv --no-o --no-g -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --delete dist/ "${CONNECTION}:${DEPLOY_PATH}"
+  after_script:
+    - rm -rf ~/.ssh
+
+deploy-dev-job:
+  stage: deploy
+  variables:
+    CONNECTION: "${SSH_DEVELOP_USER}@${SSH_DEVELOP_HOST}"
+    DEPLOY_PATH: "${DEVELOP_WORK_DIR}"
+    SSH_HOST: "${SSH_DEVELOP_HOST}"
+    SSH_PRIVATE_KEY: "${SSH_DEVELOP_PRIVATE_KEY}"
+    MANUAL: "false"
+  rules:
+    - if: $MANUAL == "false" && $CI_COMMIT_REF_NAME == "develop"
+  before_script:
+    - echo "====== UPDATE & INSTALL PACKAGES ======"
+    - apt-get -yq update && apt-get -yq upgrade
+    - apt-get -yqq install ssh curl rsync
+
+    - echo "${CONNECTION}"
+    - echo "${DEPLOY_PATH}"
+    - echo "${MANUAL}"
+
+    - echo "====== SET SSH KEY ======"
+    - eval "$(ssh-agent -s)"
+    - ssh-add <(echo "${SSH_PRIVATE_KEY}")
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
+    - chmod 664 ~/.ssh/known_hosts
+
+    - echo "====== TEST SSH CONNECTION ======"
+    - ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T "${CONNECTION}"
+  script:
+    - echo "====== SYNC LOCAL AND REMOTE DIRECTORY ======"
+    - rsync -ahv --no-o --no-g -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --delete dist/ "${CONNECTION}:${DEPLOY_PATH}"
+  after_script:
+    - rm -rf ~/.ssh
+
+deploy-story-job:
+  stage: deploy
+  variables:
+    CONNECTION: "${SSH_DEVELOP_USER}@${SSH_DEVELOP_HOST}"
+    DEPLOY_PATH: "${STORYBOOK_WORK_DIR}"
+    SSH_HOST: "${SSH_DEVELOP_HOST}"
+    SSH_PRIVATE_KEY: "${SSH_DEVELOP_PRIVATE_KEY}"
+    MANUAL: "false"
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "develop"
+  before_script:
+    - echo "====== UPDATE & INSTALL PACKAGES ======"
+    - apt-get -yq update && apt-get -yq upgrade
+    - apt-get -yqq install ssh curl rsync
+
+    - echo "${CONNECTION}"
+    - echo "${DEPLOY_PATH}"
+    - echo "${MANUAL}"
+
+    - echo "====== SET SSH KEY ======"
+    - eval "$(ssh-agent -s)"
+    - ssh-add <(echo "${SSH_PRIVATE_KEY}")
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
+    - chmod 664 ~/.ssh/known_hosts
+
+    - echo "====== TEST SSH CONNECTION ======"
+    - ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T "${CONNECTION}"
+  script:
+    - echo "====== SYNC LOCAL AND REMOTE DIRECTORY ======"
+    - rsync -ahv --no-o --no-g -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --delete storybook-static/ "${CONNECTION}:${DEPLOY_PATH}"
+  after_script:
+    - rm -rf ~/.ssh
+
+deploy-manual-job:
+  stage: deploy
+  variables:
+    CONNECTION: "${SSH_DEVELOP_USER}@${SSH_DEVELOP_HOST}"
+    DEPLOY_PATH: "${DEVELOP_WORK_DIR}"
+    SSH_HOST: "${SSH_DEVELOP_HOST}"
+    SSH_PRIVATE_KEY: "${SSH_DEVELOP_PRIVATE_KEY}"
+    MANUAL: "false"
+  rules:
+    - if: $MANUAL == "true"
+  before_script:
+    - echo "====== UPDATE & INSTALL PACKAGES ======"
+    - apt-get -yq update && apt-get -yq upgrade
+    - apt-get -yqq install ssh curl rsync
+
+    - echo "${CONNECTION}"
+    - echo "${DEPLOY_PATH}"
+    - echo "${MANUAL}"
+
+    - echo "====== SET SSH KEY ======"
+    - eval "$(ssh-agent -s)"
+    - ssh-add <(echo "${SSH_PRIVATE_KEY}")
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "${SSH_HOST}" >> ~/.ssh/known_hosts
+    - chmod 664 ~/.ssh/known_hosts
+
+    - echo "====== TEST SSH CONNECTION ======"
+    - ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T "${CONNECTION}"
+  script:
+    - echo "====== SYNC LOCAL AND REMOTE DIRECTORY ======"
+    - rsync -ahv --no-o --no-g -e "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --delete dist/ "${CONNECTION}:${DEPLOY_PATH}"
+  after_script:
+    - rm -rf ~/.ssh

@@ -1,0 +1,42 @@
+// Структура выстроена только для цветов, но в большом проекте сюда закладываются и остальные
+// свойства переменными для большей гибкости и тем
+
+// Основные настройки
+:root {
+--color-text-primary: #212121;
+}
+
+// Организмы
+:root {
+
+}
+
+// Молекулы
+:root {
+	// Запись
+	--record-border-color: #a2a2a6;
+	// Форма записи
+	--record-form-border-color: #a8a8af;
+}
+
+// Атомы
+:root {
+	// Кнопки
+	--button-default-text: #fff;
+	--button-default-background: #757272;
+	--button-default-background-hover: #afacac;
+	// Кнопки type = accent
+	--button-accent-text: #fff;
+	--button-accent-background: #306ade;
+	--button-accent-background-hover: #638eef;
+	// Кнопки type = error
+	--button-error-text: #fff;
+	--button-error-background: #da2323;
+	--button-error-background-hover: #f54343;
+
+	// Input
+	--input-color-border: #212121;
+
+	// Modal
+	--modal-background-blur: rgba(0, 0, 0, 0.2);
+}
